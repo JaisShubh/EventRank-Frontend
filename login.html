@@ -104,9 +104,6 @@
 
       if (result.error) {
         showToast(result.error, "error");
-      } else if (result.data?.email_confirmation_required) {
-        showToast(result.data.message, "success");
-        setAuthTab("login");
       } else if (!result.data?.token || !result.data?.user) {
         showToast("Authentication did not return a valid session. Please try again.", "error");
       } else {
