@@ -12,6 +12,7 @@ function displayDate(value) {
 export default function Dashboard({ user, token, onClose, onOpenEvent, onCreated }) {
   const [events, setEvents] = useState([])
   const [checkins, setCheckins] = useState([])
+  const [participations, setParticipations] = useState([])
   const [draft, setDraft] = useState(blankEvent)
   const [creating, setCreating] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -28,8 +29,12 @@ export default function Dashboard({ user, token, onClose, onOpenEvent, onCreated
         const result = await apiRequest('/events/mine', { token })
         setEvents(result.events || [])
       } else {
-        const result = await apiRequest('/checkins/mine', { token })
-        setCheckins(result.checkins || [])
+        const [participationResult, checkinResult] = await Promise.all([
+          apiRequest('/participations/mine', { token }),
+          apiRequest('/checkins/mine', { token }),
+        ])
+        setParticipations(participationResult.participations || [])
+        setCheckins(checkinResult.checkins || [])
       }
     } catch (requestError) {
       setError(requestError.message)
@@ -81,8 +86,8 @@ export default function Dashboard({ user, token, onClose, onOpenEvent, onCreated
         </form>}
         {busy ? <p className="dashboard-empty">Loading your events...</p> : events.length ? <div className="dashboard-list">{events.map((event) => <article className="dashboard-event" key={event.id}><div><span className="section-kicker">{event.category}</span><h4>{event.title}</h4><p>{displayDate(event.start_time || event.startTime)} · {event.venue}</p></div><span className="dashboard-count">{event.turnout_count || 0} checked in</span><button className="card-arrow" aria-label={'View ' + event.title} onClick={() => onOpenEvent(event.id)}>↗</button></article>)}</div> : <div className="dashboard-empty"><span>✳</span><h3>Your first event starts here</h3><p>Create a hackathon, workshop, or other campus event to share it with participants.</p></div>}
       </> : <>
-        <div className="dashboard-section-heading"><div><h3>Your check-ins</h3><p>Events you have attended with verified check-in.</p></div><button className="search-button" onClick={onClose}>Explore events</button></div>
-        {busy ? <p className="dashboard-empty">Loading your activity...</p> : checkins.length ? <div className="dashboard-list">{checkins.filter((checkin) => checkin.eventId).map((checkin) => { const event = checkin.eventId; return <article className="dashboard-event" key={checkin._id}><div><span className="section-kicker">{event.category}</span><h4>{event.title}</h4><p>{displayDate(event.startTime)} · {event.venue}</p></div><span className="checkin-success">Verified</span><button className="card-arrow" aria-label={'View ' + event.title} onClick={() => onOpenEvent(event._id)}>↗</button></article> })}</div> : <div className="dashboard-empty"><span>✳</span><h3>Your campus story is just starting</h3><p>Explore hackathons and workshops, then check in when you arrive to add them here.</p></div>}
+        <div className="dashboard-section-heading"><div><h3>Events you’re joining</h3><p>Your registered events and verified attendance.</p></div><button className="search-button" onClick={onClose}>Explore events</button></div>
+        {busy ? <p className="dashboard-empty">Loading your activity...</p> : participations.length ? <div className="dashboard-list">{participations.filter((item) => item.eventId).map((item) => { const event = item.eventId; const checkedIn = checkins.some((checkin) => String(checkin.eventId?._id || checkin.eventId) === String(event._id)); return <article className="dashboard-event" key={item._id}><div><span className="section-kicker">{event.category}</span><h4>{event.title}</h4><p>{displayDate(event.startTime)} · {event.venue}</p></div><span className={checkedIn ? 'checkin-success' : 'dashboard-count'}>{checkedIn ? 'Verified check-in' : 'Participating'}</span><button className="card-arrow" aria-label={'View ' + event.title} onClick={() => onOpenEvent(event._id)}>↗</button></article> })}</div> : <div className="dashboard-empty"><span>✳</span><h3>Your campus story is just starting</h3><p>Explore hackathons and workshops, then choose Participate to add events here.</p></div>}
       </>}
     </section>
   </div>

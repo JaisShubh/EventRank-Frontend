@@ -141,7 +141,7 @@ function App() {
       <footer className="footer" id="about"><a className="brand" href="#top"><span className="brand-mark">e</span><span>event<span className="brand-accent">rank</span></span></a><span>Campus life, in good company.</span><span>© 2026 EventRank</span></footer>
       {location.pathname === '/profile' && user && token && <Dashboard user={user} token={token} onClose={() => navigate('/')} onOpenEvent={(eventId) => navigate('/events/' + encodeURIComponent(eventId))} onCreated={async () => { const result = await apiRequest('/events'); setEvents(result.events || []) }} />}
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onAuthenticated={(result) => { setToken(result.token); setUser(result.user); setNotice('Signed in as ' + result.user.name) }} />}
-      {routeEventId && <EventDetail eventId={routeEventId} token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}
+      {routeEventId && <EventDetail eventId={routeEventId} token={token} user={user} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}
       {location.pathname === '/checkin' && <CheckinDialog token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}      {notice && <button className="notice-dismiss" onClick={() => setNotice('')} aria-label="Dismiss message">×</button>}
     </div>
   )
