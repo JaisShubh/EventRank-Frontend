@@ -1,163 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EventRank — Campus Event Discovery & Fair Ranking</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="ambient-glow-top"></div>
-
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="container">
-      <a href="index.html" class="nav-brand">
-        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-        <span>Event<span class="gradient-text">Rank</span></span>
-      </a>
-
-      <ul class="nav-links">
-        <li><a href="index.html" class="nav-link active">Explore</a></li>
-        <li><a href="compare.html" class="nav-link">Compare Events</a></li>
-        <li><a href="dashboard.html" class="nav-link">My Dashboard</a></li>
-      </ul>
-
-      <div class="nav-actions" id="nav-auth-actions">
-        <!-- Injected dynamically by auth.js -->
-        <a href="login.html" class="btn btn-outline btn-sm">Log In</a>
-        <a href="login.html?tab=signup" class="btn btn-primary btn-sm">Sign Up</a>
-      </div>
-    </div>
-  </header>
-
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="container">
-      <div class="hero-pill">
-        <span>⚡ Campus Discovery Powered by Bayesian Credibility & GPS Check-Ins</span>
-      </div>
-      <h1 class="hero-title">
-        Discover the Best Campus Events,<br>
-        <span class="gradient-text">Ranked by Real Students & Turnout</span>
-      </h1>
-      <p class="hero-subtitle">
-        Zero review bombing, rotating QR check-in codes, and AI-driven sentiment analysis. Experience campus life with complete transparency.
-      </p>
-
-      <!-- Search Box (District Inspired) -->
-      <div class="search-container">
-        <div class="search-box">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" id="search-input" class="search-input" placeholder="Search hackathons, workshops, cultural fests, clubs...">
-          <button class="btn btn-primary btn-sm" onclick="EventsManager.loadEvents()">Search</button>
-        </div>
-      </div>
-
-      <!-- Category Filter Chips (Unstop Inspired) -->
-      <div class="category-chips" id="category-chips">
-        <!-- Rendered dynamically by events.js -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Main Content Layout -->
-  <main class="container">
-    <div style="display: grid; grid-template-columns: 2.5fr 1fr; gap: 32px; align-items: start;">
-
-      <!-- Left Column: Events Grid -->
-      <div>
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">
-              <span>Explore Events</span>
-            </h2>
-            <p class="section-subtitle">Real-time Bayesian scores and verified attendee ratings</p>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <label for="sort-select" style="font-size: 13px; color: var(--text-dim); font-weight: 600;">Sort by:</label>
-            <select id="sort-select" class="form-select" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--bg-card);">
-              <option value="score">Highest Ranked (EventRank)</option>
-              <option value="upcoming">Upcoming Date</option>
-              <option value="turnout">Highest Attendance</option>
-              <option value="reviews">Most Reviewed</option>
-              <option value="title">Alphabetical (A-Z)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="events-grid" id="events-grid">
-          <!-- Populated by events.js -->
-        </div>
-      </div>
-
-      <!-- Right Column: Campus Leaderboard & Quick Tools -->
-      <div>
-        <!-- Leaderboard Card -->
-        <div class="detail-card" style="margin-bottom: 24px;">
-          <h3 style="font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-            <span>🏆 Campus Hall of Fame</span>
-          </h3>
-          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Top rated events on campus</p>
-
-          <div id="leaderboard-list">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <!-- Personalized Recommendations Widget -->
-        <div class="detail-card" style="margin-bottom: 24px;">
-          <h3 style="font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-            <span>🎯 Tailored For You</span>
-          </h3>
-          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Select your interests to filter matching events</p>
-
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
-            <button class="category-chip" onclick="document.getElementById('search-input').value='Hackathon'; EventsManager.searchQuery='Hackathon'; EventsManager.loadEvents();">AI & Code</button>
-            <button class="category-chip" onclick="document.getElementById('search-input').value='Music'; EventsManager.searchQuery='Music'; EventsManager.loadEvents();">Music & Arts</button>
-            <button class="category-chip" onclick="document.getElementById('search-input').value='Robotics'; EventsManager.searchQuery='Robotics'; EventsManager.loadEvents();">Hardware</button>
-            <button class="category-chip" onclick="document.getElementById('search-input').value='Tech Talk'; EventsManager.searchQuery='Tech Talk'; EventsManager.loadEvents();">Careers</button>
-          </div>
-
-          <a href="compare.html" class="btn btn-outline btn-sm btn-block" style="text-align: center;">
-            ⚖️ Compare 2 Events Side-by-Side
-          </a>
-        </div>
-
-        <!-- Quick Event Host Banner -->
-        <div class="detail-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%); border-color: rgba(139, 92, 246, 0.3);">
-          <h4 style="font-size: 15px; margin-bottom: 6px;">Hosting an Event?</h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Get anti-fraud rotating QR codes for screen display and live turnout tracking.</p>
-          <a href="dashboard.html" class="btn btn-primary btn-sm btn-block">Host on EventRank</a>
-        </div>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div>
-        <span style="font-weight: 700; color: #fff;">EventRank</span> — Campus Event Transparency System
-      </div>
-      <div>
-        Inspired by <a href="https://unstop.com" target="_blank" style="color: var(--primary);">Unstop</a> &amp; <a href="https://www.district.in" target="_blank" style="color: var(--cyan);">District</a>
-      </div>
-    </div>
-  </footer>
-
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/events.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      EventsManager.init();
-    });
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c0d14" />
+    <meta name="description" content="Discover the best campus events, ranked by real students." />
+    <title>EventRank — Campus events, ranked by students</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
