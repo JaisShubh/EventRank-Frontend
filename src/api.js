@@ -11,6 +11,10 @@ export async function apiRequest(path, options = {}) {
     body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
   })
   const data = response.status === 204 ? null : await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data?.message || 'The request could not be completed')
+  if (!response.ok) {
+    const error = new Error(data?.message || 'The request could not be completed')
+    error.status = response.status
+    throw error
+  }
   return data
 }

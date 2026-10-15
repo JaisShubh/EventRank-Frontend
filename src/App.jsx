@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import AuthDialog from './AuthDialog.jsx'
 import EventDetail from './EventDetail.jsx'
 import CheckinDialog from './CheckinDialog.jsx'
+import Dashboard from './Dashboard.jsx'
+import { apiRequest } from './api.js'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const categories = ['All events', 'Hackathon', 'Workshop', 'Music', 'Tech talk', 'Cultural']
@@ -53,6 +55,28 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false)
 
   useEffect(() => {
+    if (!token) return
+    let active = true
+    apiRequest('/auth/me', { token }).then((result) => {
+      if (!active) return
+      setUser(result.user)
+      localStorage.setItem('eventrank_user', JSON.stringify(result.user))
+    }).catch((error) => {
+      if (!active || error.status !== 401) return
+      localStorage.removeItem('eventrank_token')
+      localStorage.removeItem('eventrank_user')
+      setToken('')
+      setUser(null)
+      if (location.pathname === '/profile') setAuthOpen(true)
+    })
+    return () => { active = false }
+  }, [token])
+
+  useEffect(() => {
+    if (location.pathname === '/profile' && !token) setAuthOpen(true)
+  }, [location.pathname, token])
+
+  useEffect(() => {
     let active = true
     fetch(`${API_BASE}/events`)
       .then((response) => { if (!response.ok) throw new Error('Events service unavailable'); return response.json() })
@@ -75,7 +99,7 @@ function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="EventRank home"><span className="brand-mark">e</span><span>event<span className="brand-accent">rank</span></span></a>
         <nav className="main-nav" aria-label="Main navigation"><a className="nav-item active" href="#discover">Discover</a><a className="nav-item" href="#rankings">Rankings</a><a className="nav-item" href="#about">How it works</a></nav>
-        <div className="top-actions">{user ? <><span className="user-greeting">Hi, {user.name}</span><button className="login-button" onClick={() => { localStorage.removeItem('eventrank_token'); localStorage.removeItem('eventrank_user'); setToken(''); setUser(null) }}>Log out</button></> : <button className="login-button" onClick={() => setAuthOpen(true)}>Log in</button>}<button className="profile-button" aria-label="Open profile" onClick={() => setAuthOpen(true)}>{user?.name?.[0]?.toUpperCase() || 'S'}</button></div>
+        <div className="top-actions">{user ? <><span className="user-greeting">Hi, {user.name}</span><button className="login-button" onClick={() => { localStorage.removeItem('eventrank_token'); localStorage.removeItem('eventrank_user'); setToken(''); setUser(null); navigate('/') }}>Log out</button></> : <button className="login-button" onClick={() => setAuthOpen(true)}>Log in</button>}<button className="profile-button" aria-label={user ? 'Open dashboard' : 'Sign in to view profile'} onClick={() => user && token ? navigate('/profile') : setAuthOpen(true)}>{user?.name?.[0]?.toUpperCase() || 'S'}</button></div>
       </header>
 
       <main id="top">
@@ -115,6 +139,7 @@ function App() {
         <section className="trust-strip" id="rankings"><div className="trust-icon">✦</div><div><div className="section-kicker">A BETTER WAY TO PICK</div><h2>Good events earn their reputation.</h2><p>Rankings bring together student reviews and verified attendance, so the best events rise for the right reasons.</p></div><div className="trust-stats"><div><strong>01</strong><span>Show up</span></div><div><strong>02</strong><span>Share your take</span></div><div><strong>03</strong><span>Help your campus choose</span></div></div></section>
       </main>
       <footer className="footer" id="about"><a className="brand" href="#top"><span className="brand-mark">e</span><span>event<span className="brand-accent">rank</span></span></a><span>Campus life, in good company.</span><span>© 2026 EventRank</span></footer>
+      {location.pathname === '/profile' && user && token && <Dashboard user={user} token={token} onClose={() => navigate('/')} onOpenEvent={(eventId) => navigate('/events/' + encodeURIComponent(eventId))} onCreated={async () => { const result = await apiRequest('/events'); setEvents(result.events || []) }} />}
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onAuthenticated={(result) => { setToken(result.token); setUser(result.user); setNotice('Signed in as ' + result.user.name) }} />}
       {routeEventId && <EventDetail eventId={routeEventId} token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}
       {location.pathname === '/checkin' && <CheckinDialog token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}      {notice && <button className="notice-dismiss" onClick={() => setNotice('')} aria-label="Dismiss message">×</button>}

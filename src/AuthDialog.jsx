@@ -6,6 +6,7 @@ export default function AuthDialog({ onClose, onAuthenticated }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState('participant')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -16,7 +17,7 @@ export default function AuthDialog({ onClose, onAuthenticated }) {
     try {
       const result = await apiRequest('/auth/' + mode, {
         method: 'POST',
-        body: mode === 'login' ? { email, password } : { name, email, password },
+        body: mode === 'login' ? { email, password } : { name, email, password, role },
       })
       localStorage.setItem('eventrank_token', result.token)
       localStorage.setItem('eventrank_user', JSON.stringify(result.user))
@@ -36,6 +37,10 @@ export default function AuthDialog({ onClose, onAuthenticated }) {
       <h2 id="auth-title">{mode === 'login' ? 'Sign in' : 'Create your account'}</h2>
       <form className="dialog-form" onSubmit={submit}>
         {mode === 'register' && <label>Name<input autoComplete="name" minLength="2" maxLength="80" required value={name} onChange={(event) => setName(event.target.value)} /></label>}
+        {mode === 'register' && <fieldset className="role-picker"><legend>I want to join as</legend>
+          <label className={`role-option ${role === 'community' ? 'selected' : ''}`}><input type="radio" name="role" value="community" checked={role === 'community'} onChange={() => setRole('community')} /><span><strong>Community organizer</strong><small>Host hackathons, workshops, and campus events.</small></span></label>
+          <label className={`role-option ${role === 'participant' ? 'selected' : ''}`}><input type="radio" name="role" value="participant" checked={role === 'participant'} onChange={() => setRole('participant')} /><span><strong>Participant</strong><small>Discover events, check in, and share reviews.</small></span></label>
+        </fieldset>}
         <label>Email<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         <label>Password<input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength="8" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
         {error && <p className="form-error" role="alert">{error}</p>}
