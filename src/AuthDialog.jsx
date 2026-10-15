@@ -32,7 +32,7 @@ export default function AuthDialog({ onClose, onAuthenticated }) {
 
   return <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section className="dialog-card auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-      <button className="dialog-close" onClick={onClose} aria-label="Close">Ã—</button>
+      <button className="dialog-close" onClick={onClose} aria-label="Close">&times;</button>
       <div className="section-kicker">WELCOME TO EVENTRANK</div>
       <h2 id="auth-title">{mode === 'login' ? 'Sign in' : 'Create your account'}</h2>
       <form className="dialog-form" onSubmit={submit}>

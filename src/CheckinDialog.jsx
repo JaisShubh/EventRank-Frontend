@@ -47,7 +47,7 @@ export default function CheckinDialog({ token, onClose, onRequireAuth }) {
 
   return <div className="dialog-backdrop" role="presentation">
     <section className="dialog-card checkin-dialog" role="dialog" aria-modal="true" aria-labelledby="checkin-title">
-      <button className="dialog-close" onClick={onClose} aria-label="Close">×</button>
+      <button className="dialog-close" onClick={onClose} aria-label="Close">&times;</button>
       <div className="section-kicker">EVENTRANK CHECK-IN</div>
       <h2 id="checkin-title">Verify your attendance</h2>
       <p>Sign in and allow location access while you are at the event venue.</p>

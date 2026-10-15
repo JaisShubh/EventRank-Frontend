@@ -85,7 +85,7 @@ export default function EventDetail({ eventId, token, user, onClose, onRequireAu
 
   return <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section className="dialog-card event-dialog" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
-      <button className="dialog-close" onClick={onClose} aria-label="Close event details">Ã—</button>
+      <button className="dialog-close" onClick={onClose} aria-label="Close event details">&times;</button>
       {busy && <p>Loading eventâ€¦</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       {event && <>
