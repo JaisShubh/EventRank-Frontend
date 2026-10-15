@@ -18,6 +18,8 @@ export default function EventDetail({ eventId, token, user, onClose, onRequireAu
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(true)
   const [saving, setSaving] = useState(false)
+  const eventHasEnded = event ? new Date(event.start_time || event.startTime).getTime() <= Date.now() : false
+  const canReview = Boolean(token && user?.role === 'participant' && participation?.participating && eventHasEnded)
 
   useEffect(() => {
     let active = true
@@ -93,13 +95,15 @@ export default function EventDetail({ eventId, token, user, onClose, onRequireAu
         <div className="participation-banner"><div><strong>{participation?.participating ? 'You’re on the list' : 'Want to be there?'}</strong><small>{participation?.registered_count ?? event.registeredCount ?? 0} of {participation?.capacity ?? event.capacity ?? 100} spots claimed</small></div>{participation?.participating ? <button className="participation-button joined" disabled>Participating ✓</button> : user?.role === 'community' ? <span className="participation-note">Participant accounts can join</span> : <button className="participation-button" onClick={joinEvent} disabled={joining || ((participation?.registered_count ?? event.registeredCount ?? 0) >= (participation?.capacity ?? event.capacity ?? 100))}>{joining ? 'Joining...' : ((participation?.registered_count ?? event.registeredCount ?? 0) >= (participation?.capacity ?? event.capacity ?? 100)) ? 'Event full' : !token ? 'Sign in to participate' : 'Participate'}</button>}</div>
         {insights && <p className="insight-summary">{insights.total_reviews} reviews Â· average rating {insights.average_rating}/10 Â· {insights.verified_attendees} verified attendees</p>}
         <h3>Student reviews</h3>
-        <div className="review-list">{reviews.length ? reviews.map((review) => <article className="review-item" key={review.id || review._id}><div className="review-meta"><strong>{review.verified_attendee ? 'Verified attendee' : 'Student review'}</strong><span>{review.rating}/10</span></div><p>{review.comment || 'Rating only'}</p></article>) : <p>No reviews yet. Be the first to share your experience.</p>}</div>
-        <h3>Share your review</h3>
-        <form className="dialog-form" onSubmit={submitReview}>
-          <label>Rating (1â€“10)<input type="number" min="1" max="10" required value={rating} onChange={(event) => setRating(event.target.value)} /></label>
-          <label>Comment<textarea maxLength="5000" rows="3" value={comment} onChange={(event) => setComment(event.target.value)} placeholder="What should other students know?" /></label>
-          <button className="search-button dialog-submit" disabled={saving}>{saving ? 'Savingâ€¦' : token ? 'Submit review' : 'Sign in to review'}</button>
-        </form>
+        <div className="review-list">{reviews.length ? reviews.map((review) => <article className="review-item" key={review.id || review._id}><div className="review-meta"><strong>{review.verified_attendee ? 'Verified attendee' : 'Student review'}</strong><span>{review.rating}/10</span></div><p>{review.comment || 'Rating only'}</p></article>) : <p>No reviews yet.</p>}</div>
+        {canReview ? <>
+          <h3>Share your review</h3>
+          <form className="dialog-form" onSubmit={submitReview}>
+            <label>Rating (1 to 10)<input type="number" min="1" max="10" required value={rating} onChange={(event) => setRating(event.target.value)} /></label>
+            <label>Comment<textarea maxLength="5000" rows="3" value={comment} onChange={(event) => setComment(event.target.value)} placeholder="What should other students know?" /></label>
+            <button className="search-button dialog-submit" disabled={saving}>{saving ? 'Saving...' : 'Submit review'}</button>
+          </form>
+        </> : <p className="participation-note">{!token ? 'Sign in as a participant to review this event after it ends.' : user?.role !== 'participant' ? 'Only participants can review events.' : !participation?.participating ? 'Join the event to unlock a review after it ends.' : 'Reviews open after the event ends.'}</p>}
       </>}
     </section>
   </div>
