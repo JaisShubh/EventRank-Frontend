@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import AuthDialog from './AuthDialog.jsx'
+import EventDetail from './EventDetail.jsx'
+import CheckinDialog from './CheckinDialog.jsx'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const categories = ['All events', 'Hackathon', 'Workshop', 'Music', 'Tech talk', 'Cultural']
 const interestCards = [
   { name: 'Hackathon', label: 'Build something bold', icon: '⌘', tone: 'interest-violet' },
@@ -41,12 +45,18 @@ function App() {
   const [query, setQuery] = useState('')
   const [sortBy, setSortBy] = useState('score')
   const [notice, setNotice] = useState('')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const routeEventId = location.pathname.split('/')[2] || ''
+  const [token, setToken] = useState(() => localStorage.getItem('eventrank_token') || '')
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('eventrank_user') || 'null') } catch { return null } })
+  const [authOpen, setAuthOpen] = useState(false)
 
   useEffect(() => {
     let active = true
     fetch(`${API_BASE}/events`)
       .then((response) => { if (!response.ok) throw new Error('Events service unavailable'); return response.json() })
-      .then((data) => { if (active && Array.isArray(data.events) && data.events.length) setEvents(data.events) })
+      .then((data) => { if (active && Array.isArray(data.events)) { setEvents(data.events); setNotice('') } })
       .catch(() => { if (active) setNotice('Showing a preview while the campus events service is offline.') })
     return () => { active = false }
   }, [])
@@ -65,7 +75,7 @@ function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="EventRank home"><span className="brand-mark">e</span><span>event<span className="brand-accent">rank</span></span></a>
         <nav className="main-nav" aria-label="Main navigation"><a className="nav-item active" href="#discover">Discover</a><a className="nav-item" href="#rankings">Rankings</a><a className="nav-item" href="#about">How it works</a></nav>
-        <div className="top-actions"><button className="login-button" onClick={() => setNotice('Sign in will be available when authentication is connected.')}>Log in</button><button className="profile-button" aria-label="Open profile">S</button></div>
+        <div className="top-actions">{user ? <><span className="user-greeting">Hi, {user.name}</span><button className="login-button" onClick={() => { localStorage.removeItem('eventrank_token'); localStorage.removeItem('eventrank_user'); setToken(''); setUser(null) }}>Log out</button></> : <button className="login-button" onClick={() => setAuthOpen(true)}>Log in</button>}<button className="profile-button" aria-label="Open profile" onClick={() => setAuthOpen(true)}>{user?.name?.[0]?.toUpperCase() || 'S'}</button></div>
       </header>
 
       <main id="top">
@@ -96,7 +106,7 @@ function App() {
           <div className="event-grid">
             {visibleEvents.map((event, index) => <article className={`event-card ${index === 0 ? 'featured-card' : ''}`} key={event.id}>
               <div className={`event-art ${event.color || ['violet', 'orange', 'blue', 'green'][index % 4]}`}><span className="art-category">{event.category || 'Campus'}</span><span className="event-glyph">{event.icon || ['✳', '♫', '◈', '⌘'][index % 4]}</span><span className="art-orb"/><span className="art-grain"/></div>
-              <div className="card-content"><div className="card-meta"><span>{event.organizer || 'Campus club'}</span><span className="rank-score"><span>★</span> {Number(event.score || 0).toFixed(1)}</span></div><h3>{event.title}</h3><p className="event-description">{event.description || 'A chance to meet people, learn something new, and enjoy what campus has to offer.'}</p><div className="event-details"><span><Icon name="calendar" size={15}/>{formatDate(event.start_time)}</span><span><Icon name="pin" size={15}/>{event.venue || 'Campus venue'}</span></div><div className="card-footer"><span className="attendee-count"><span className="attendee-stack"><i>S</i><i>A</i><i>+</i></span>{event.turnout_count || 0} checked in</span><button className="card-arrow" aria-label={`View ${event.title}`} onClick={() => setNotice(`${event.title} details are coming soon.`)}><Icon name="arrow" size={18}/></button></div></div>
+              <div className="card-content"><div className="card-meta"><span>{event.organizer || 'Campus club'}</span><span className="rank-score"><span>★</span> {Number(event.score || 0).toFixed(1)}</span></div><h3>{event.title}</h3><p className="event-description">{event.description || 'A chance to meet people, learn something new, and enjoy what campus has to offer.'}</p><div className="event-details"><span><Icon name="calendar" size={15}/>{formatDate(event.start_time)}</span><span><Icon name="pin" size={15}/>{event.venue || 'Campus venue'}</span></div><div className="card-footer"><span className="attendee-count"><span className="attendee-stack"><i>S</i><i>A</i><i>+</i></span>{event.turnout_count || 0} checked in</span><button className="card-arrow" aria-label={`View ${event.title}`} onClick={() => navigate('/events/' + encodeURIComponent(event.id || event._id))}><Icon name="arrow" size={18}/></button></div></div>
             </article>)}
           </div>
           {visibleEvents.length === 0 && <div className="empty-state"><span>✳</span><h3>No events found</h3><p>Try another search or choose a different category.</p><button onClick={() => { setQuery(''); setCategory('All events') }}>Clear filters</button></div>}
@@ -105,7 +115,9 @@ function App() {
         <section className="trust-strip" id="rankings"><div className="trust-icon">✦</div><div><div className="section-kicker">A BETTER WAY TO PICK</div><h2>Good events earn their reputation.</h2><p>Rankings bring together student reviews and verified attendance, so the best events rise for the right reasons.</p></div><div className="trust-stats"><div><strong>01</strong><span>Show up</span></div><div><strong>02</strong><span>Share your take</span></div><div><strong>03</strong><span>Help your campus choose</span></div></div></section>
       </main>
       <footer className="footer" id="about"><a className="brand" href="#top"><span className="brand-mark">e</span><span>event<span className="brand-accent">rank</span></span></a><span>Campus life, in good company.</span><span>© 2026 EventRank</span></footer>
-      {notice && <button className="notice-dismiss" onClick={() => setNotice('')} aria-label="Dismiss message">×</button>}
+      {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onAuthenticated={(result) => { setToken(result.token); setUser(result.user); setNotice('Signed in as ' + result.user.name) }} />}
+      {routeEventId && <EventDetail eventId={routeEventId} token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}
+      {location.pathname === '/checkin' && <CheckinDialog token={token} onClose={() => navigate('/')} onRequireAuth={() => setAuthOpen(true)} />}      {notice && <button className="notice-dismiss" onClick={() => setNotice('')} aria-label="Dismiss message">×</button>}
     </div>
   )
 }
