@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal — EventRank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+  <div class="ambient-glow-top"></div>
+
+  <div class="modal-content" style="max-width: 440px; transform: scale(1); position: relative; z-index: 1;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <a href="index.html" class="nav-brand" style="justify-content: center; margin-bottom: 12px;">
+        <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        <span>Event<span class="gradient-text">Rank</span></span>
+      </a>
+      <p style="font-size: 13px; color: var(--text-muted);">Campus Event Discovery &amp; Verified Feedback</p>
+    </div>
+
+    <!-- Auth Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-full); border: 1px solid var(--border-subtle);">
+      <button class="btn btn-block btn-sm" id="tab-login" onclick="setAuthTab('login')" style="background: var(--bg-card); color: #fff;">Log In</button>
+      <button class="btn btn-block btn-sm" id="tab-signup" onclick="setAuthTab('signup')" style="background: transparent; color: var(--text-dim);">Sign Up</button>
+    </div>
+
+    <!-- Login / Signup Form -->
+    <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+      <div class="form-group" id="group-name" style="display: none;">
+        <label class="form-label" for="auth-name">Full Name</label>
+        <input type="text" id="auth-name" class="form-input" placeholder="e.g. Alex Rivera">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="auth-email">Student Email</label>
+        <input type="email" id="auth-email" class="form-input" placeholder="student@campus.edu" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="auth-password">Password</label>
+        <input type="password" id="auth-password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-block" style="margin-top: 8px;">
+        Log In to EventRank
+      </button>
+
+      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); text-align: center;">
+        <button type="button" onclick="fillDemoStudent()" class="btn btn-outline btn-sm btn-block" style="font-size: 12px;">
+          ⚡ Quick Fill Demo Student Account
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let currentTab = "login";
+
+    function setAuthTab(tab) {
+      currentTab = tab;
+      const isLogin = tab === "login";
+      document.getElementById("tab-login").style.background = isLogin ? "var(--bg-card)" : "transparent";
+      document.getElementById("tab-login").style.color = isLogin ? "#fff" : "var(--text-dim)";
+      document.getElementById("tab-signup").style.background = !isLogin ? "var(--bg-card)" : "transparent";
+      document.getElementById("tab-signup").style.color = !isLogin ? "#fff" : "var(--text-dim)";
+
+      document.getElementById("group-name").style.display = isLogin ? "none" : "block";
+      document.getElementById("auth-submit-btn").innerText = isLogin ? "Log In to EventRank" : "Create Student Account";
+    }
+
+    function fillDemoStudent() {
+      document.getElementById("auth-email").value = "alex.rivera@campus.edu";
+      document.getElementById("auth-password").value = "CampusPass123!";
+      if (document.getElementById("auth-name")) {
+        document.getElementById("auth-name").value = "Alex Rivera";
+      }
+      showToast("Filled demo credentials! Click submit to continue.", "info");
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value.trim();
+      const name = document.getElementById("auth-name")?.value.trim();
+
+      const btn = document.getElementById("auth-submit-btn");
+      btn.disabled = true;
+      btn.innerText = "Processing...";
+
+      let result;
+      if (currentTab === "signup") {
+        result = await API.signup({ email, password, name });
+      } else {
+        result = await API.login({ email, password });
+      }
+
+      btn.disabled = false;
+      btn.innerText = currentTab === "login" ? "Log In to EventRank" : "Create Student Account";
+
+      if (result.error) {
+        showToast(result.error, "error");
+      } else if (result.data?.email_confirmation_required) {
+        showToast(result.data.message, "success");
+        setAuthTab("login");
+      } else if (!result.data?.token || !result.data?.user) {
+        showToast("Authentication did not return a valid session. Please try again.", "error");
+      } else {
+        Auth.saveSession(result.data.token, result.data.user);
+        showToast("Welcome to EventRank!", "success");
+
+        const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
+        let redirect = "dashboard.html";
+        if (requestedRedirect) {
+          try {
+            const target = new URL(requestedRedirect, window.location.href);
+            if (target.origin === window.location.origin) redirect = target.href;
+          } catch {
+            redirect = "dashboard.html";
+          }
+        }
+        setTimeout(() => window.location.href = redirect, 800);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabParam = new URLSearchParams(window.location.search).get("tab");
+      if (tabParam === "signup") {
+        setAuthTab("signup");
+      }
+    });
+  </script>
+</body>
+</html>
